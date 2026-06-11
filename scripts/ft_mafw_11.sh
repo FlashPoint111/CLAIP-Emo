@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 export TRANSFORMERS_OFFLINE=1
 
 server=170
@@ -41,6 +44,7 @@ do
         --batch_size ${batch_size} \
         --num_sample 1 \
         --input_size ${input_size} \
+        --input_size_audio ${input_size_audio} \
         --short_side_size ${input_size} \
         --save_ckpt_freq 1000 \
         --num_frames 16 \
