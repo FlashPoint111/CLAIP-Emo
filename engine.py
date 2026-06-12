@@ -284,8 +284,7 @@ def final_test(data_loader, model, device, file, save_feature=False):
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 
-    if not os.path.exists(file):
-        os.mknod(file)
+    os.makedirs(os.path.dirname(file) or '.', exist_ok=True)
     with open(file, 'w') as f:
         f.write("{}, {}\n".format(acc1, acc5))
         for line in final_result:

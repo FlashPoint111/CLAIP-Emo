@@ -2,8 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from transformers import CLIPVisionModel, ClapAudioModelWithProjection, CLIPProcessor
-from transformers.models.clip.modeling_clip import CLIPEncoderLayer, CLIPMLP
+from transformers import CLIPVisionModel
 from torch.nn import init
 from peft import get_peft_model, LoraConfig, TaskType
 from einops import rearrange
@@ -25,7 +24,8 @@ class CLIP_CLAP(nn.Module):
     def __init__(self, lora_r=8, lora_alpha=32, lora_dropout=0.1,
                  num_classes=7,
                  audio_encoder="laion-clap",
-                 vision_encoder="openai/clip-vit-base-patch16"):
+                 vision_encoder="openai/clip-vit-base-patch16",
+                 clap_ckpt=None):
         super(CLIP_CLAP, self).__init__()
 
         # 根据模态选择性地初始化编码器
@@ -33,7 +33,8 @@ class CLIP_CLAP(nn.Module):
                                                         lora_dropout=lora_dropout, model_name=vision_encoder)
 
         self.audio_encoder = self.build_audio_encoder(lora_r=lora_r, lora_alpha=lora_alpha,
-                                                      lora_dropout=lora_dropout, model_name=audio_encoder)
+                                                      lora_dropout=lora_dropout, model_name=audio_encoder,
+                                                      ckpt=clap_ckpt)
         embdim = 1024 if 'large' in vision_encoder else 768
 
         self.temporal_v = Temporal_Transformer_Cls(
@@ -80,16 +81,19 @@ class CLIP_CLAP(nn.Module):
         encoder = get_peft_model(encoder, lora_config)
         return encoder.base_model
 
-    def build_audio_encoder(self, lora_r=8, lora_alpha=32, lora_dropout=0.1, model_name="laion/clap-htsat-fused"):
+    def build_audio_encoder(self, lora_r=8, lora_alpha=32, lora_dropout=0.1, model_name="laion/clap-htsat-fused", ckpt=None):
 
         encoder = self.build_hsat_encoder(lora_r=lora_r, lora_alpha=lora_alpha,
-                                          lora_dropout=lora_dropout, model_name=model_name)
+                                          lora_dropout=lora_dropout, model_name=model_name, ckpt=ckpt)
         return encoder
 
-    def build_hsat_encoder(self, lora_r=8, lora_alpha=32, lora_dropout=0.1, model_name="laion/clap-htsat-fused"):
+    def build_hsat_encoder(self, lora_r=8, lora_alpha=32, lora_dropout=0.1, model_name="laion/clap-htsat-fused", ckpt=None):
         print(
             f"Building audio encoder: {model_name} with LoRA config: r={lora_r}, alpha={lora_alpha}, dropout={lora_dropout}")
-        ckpt = '/data2/chenyin/DFER/checkpoints/CLAP/audio_branch/630k-audioset-fusion-best.pt'
+        if not ckpt:
+            raise ValueError("A CLAP checkpoint path is required. Pass --clap_ckpt or set CLAP_CKPT.")
+        if not os.path.isfile(ckpt):
+            raise FileNotFoundError(f"CLAP checkpoint not found: {ckpt}")
         encoder = CLAP_Audio_Encoder(
             num_classes=0, enable_fusion=True, use_lora=True, ckpt=ckpt)
         return encoder
@@ -127,6 +131,7 @@ def clipb32_clap_simple_concat_tv(num_classes=7, pretrained_cfg=None, pretrained
     model = CLIP_CLAP(num_classes=num_classes,
                       audio_encoder="laion-clap",
                       vision_encoder="openai/clip-vit-base-patch32",
+                      clap_ckpt=kwargs.get('clap_ckpt'),
                       )
     return model
 
@@ -136,6 +141,7 @@ def clipb16_clap_simple_concat_tv(num_classes=7, pretrained_cfg=None, pretrained
     model = CLIP_CLAP(num_classes=num_classes,
                       audio_encoder="laion-clap",
                       vision_encoder="openai/clip-vit-base-patch16",
+                      clap_ckpt=kwargs.get('clap_ckpt'),
                       )
     return model
 
@@ -145,6 +151,7 @@ def clipl14_clap_simple_concat_tv(num_classes=7, pretrained_cfg=None, pretrained
     model = CLIP_CLAP(num_classes=num_classes,
                       audio_encoder="laion-clap",
                       vision_encoder="openai/clip-vit-large-patch14",
+                      clap_ckpt=kwargs.get('clap_ckpt'),
                       )
     return model
 

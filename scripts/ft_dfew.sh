@@ -1,7 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 export TRANSFORMERS_OFFLINE=1
 
 server=170
 pretrain_dataset='clip+clap/baseline'
+clap_ckpt=${CLAP_CKPT:-"./checkpoints/CLAP/audio_branch/630k-audioset-fusion-best.pt"}
 # dataset
 finetune_dataset='dfew'
 num_labels=7
@@ -41,6 +45,7 @@ do
         --batch_size ${batch_size} \
         --num_sample 1 \
         --input_size ${input_size} \
+        --input_size_audio ${input_size_audio} \
         --short_side_size ${input_size} \
         --save_ckpt_freq 1000 \
         --num_frames 16 \
@@ -55,6 +60,7 @@ do
         --test_num_crop 2 \
         --num_workers 8 \
         --layer_decay 1 \
+        --clap_ckpt "${clap_ckpt}" \
         --update_freq 2 \
        >>${OUTPUT_DIR}/nohup.out 2>&1
 done

@@ -6,6 +6,7 @@
 # Swin Transformer for Computer Vision: https://arxiv.org/pdf/2103.14030.pdf
 
 from peft import get_peft_model, LoraConfig, TaskType
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -1426,7 +1427,11 @@ except:
 
 @register_model
 def clap_audio_encoder_not_fuison(num_classes=7, pretrained_cfg=None, pretrained=False, **kwargs):
-    ckpt = '/data2/chenyin/DFER/checkpoints/CLAP/audio_branch/630k-audioset-fusion-best.pt'
+    ckpt = kwargs.get('clap_ckpt') or os.environ.get('CLAP_CKPT', '')
+    if not ckpt:
+        raise ValueError("A CLAP checkpoint path is required. Pass clap_ckpt or set CLAP_CKPT.")
+    if not os.path.isfile(ckpt):
+        raise FileNotFoundError(f"CLAP checkpoint not found: {ckpt}")
     encoder = CLAP_Audio_Encoder(num_classes=num_classes, ckpt=ckpt)
 
     return encoder

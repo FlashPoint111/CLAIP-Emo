@@ -5,6 +5,7 @@ export TRANSFORMERS_OFFLINE=1
 
 server=170
 pretrain_dataset='clip+clap/baseline'
+clap_ckpt=${CLAP_CKPT:-"./checkpoints/CLAP/audio_branch/630k-audioset-fusion-best.pt"}
 # dataset
 finetune_dataset='MAFW'
 num_labels=11
@@ -59,6 +60,7 @@ do
         --test_num_crop 2 \
         --num_workers 8 \
         --layer_decay 1 \
+        --clap_ckpt "${clap_ckpt}" \
        >>${OUTPUT_DIR}/nohup.out 2>&1
 done
 done

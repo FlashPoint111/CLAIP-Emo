@@ -150,6 +150,8 @@ def get_args():
     # Finetuning params
     parser.add_argument('--finetune', default='',
                         help='finetune from checkpoint')
+    parser.add_argument('--clap_ckpt', default=os.environ.get('CLAP_CKPT', ''), type=str,
+                        help='Path to the CLAP audio encoder checkpoint')
     parser.add_argument('--model_key', default='model|module', type=str)
     parser.add_argument('--model_prefix', default='', type=str)
     parser.add_argument('--init_scale', default=0.001, type=float)
@@ -407,6 +409,7 @@ def main(local_rank, nprocs, args, ds_init):
                          num_classes=args.nb_classes,
                          num_frames=args.num_frames,
                          pretrained=args.finetune,
+                         clap_ckpt=args.clap_ckpt,
                          )
 
     model.to(device)
